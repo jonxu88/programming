@@ -1,29 +1,24 @@
-#Next to do: use magic method so that one can create more than one rover.
 #"Nice to have" features: 
 # -- detect when one rover collides with another
-# -- detech when a rover "falls off" the plateau (otherwise what's the point of specifying the plateau?)
-
-#Code to add 2d vectors without using numpy, copied from the Sololearn lesson on magic methods
-#NOT USED
-class Vect_2d:
-    def __init__(self, x_pos, y_pos):
-        self.x_pos = x_pos
-        self.y_pos = y_pos
-
-    def __add__(self, other):
-        return Vect_2d(self.x_pos + other.x_pos, self.y_pos + other.y_pos)
-
-class Plateau:
-    def __init__(self, x_upper_right, y_upper_right):
-        self.x_upper_right = x_upper_right
-        self.y_upper_right = y_upper_right
 
 class Rover:
-    def __init__(self, name, x_pos, y_pos, orientation):
+    def __init__(self, name, x_pos, y_pos, orientation, plateau_ur_corner_x, plateau_ur_corner_y):
         self.name = name
         self.x_pos = x_pos
         self.y_pos = y_pos
         self.orientation = orientation
+        self.plateau_ur_corner_x = plateau_ur_corner_x
+        self.plateau_ur_corner_y = plateau_ur_corner_y
+        #Print a message and quit if the rover is initially outside the plateau
+        if self.isRoverInsidePlateau() == False:
+            print("Rover is outside the plateau, please restart the program and choose a starting point inside the plateau.")
+            quit()
+
+    def isRoverInsidePlateau(self):
+        if self.x_pos < 0 or self.y_pos < 0 or self.x_pos > self.plateau_ur_corner_x or self.y_pos > self.plateau_ur_corner_y:
+            return False
+        else:
+            return True
 
     def move_forward(self):
         if self.orientation == "N":
@@ -34,26 +29,18 @@ class Rover:
             self.y_pos -= 1
         elif self.orientation == "W":
             self.x_pos -= 1 
+        #Print a message and exit if the rover falls off the plateau
+        if self.isRoverInsidePlateau() == False:
+            print("The rover has fallen off the plateau. Please restart the program and try again.")
+            quit()
 
     def turn_left(self):
-        if self.orientation == "N":
-            self.orientation = "W"
-        elif self.orientation == "E":
-            self.orientation = "N"
-        elif self.orientation == "S":
-            self.orientation = "E"
-        elif self.orientation == "W":
-            self.orientation = "S" 
+        turning_left_dict = { "N" : "W", "E" : "N", "S" : "E", "W" : "S" }
+        self.orientation = turning_left_dict[self.orientation]
     
     def turn_right(self):
-        if self.orientation == "N":
-            self.orientation = "E"
-        elif self.orientation == "E":
-            self.orientation = "S"
-        elif self.orientation == "S":
-            self.orientation = "W"
-        elif self.orientation == "W":
-            self.orientation = "N" 
+        turning_right_dict = { "N" : "E", "E" : "S", "S" : "W", "W" : "N" }
+        self.orientation = turning_right_dict[self.orientation]
 
     def issue_command(self, letter):
         if letter == "M":
@@ -66,6 +53,9 @@ class Rover:
             print("Something is wrong with the input instructions sent to the rover named {}".format(self.name))
         print(self.name + " has moved to (" + str(self.x_pos) + "," + str(self.y_pos) + ") and is facing " + self.orientation + ".")
 
+    def print_stop_message(self):
+        print(self.name + " has carried out its orders. It has stopped at (" + str(self.x_pos) + "," + str(self.y_pos) + "), and is facing " + self.orientation + ".")
+
 # A function that takes in the string "(x,y)" (IMPORTANT, DON'T INPUT A TUPLE, INPUT A STRING) and returns the integers x and y
 def extract_coords(xystring):
     x = xystring.split(',')[0]
@@ -76,31 +66,23 @@ def extract_coords(xystring):
     y = int(y)  
     return x, y
 
-# Do for one rover first
+#Program starts here
+plateau_ur_corner = input("Enter (x,y) coordinate of the upper right coordinate of the plateau: ")
+plateau_ur_corner_x, plateau_ur_corner_y = extract_coords(plateau_ur_corner)
 
-# Enter x-coordinate of the upper right corner of the plateau
-# Enter y-coordinate of the upper right corner of the plateau
-# Enter name of rover
-# Enter rovers initial x-coordinate
-# Enter rovers initial y-coordinate
-# Enter rovers orientation
-# Enter string of instructions to send to rover (no spaces)
-# Output the rover's final coordinates and heading
-
-ur_corner = input("Enter (x,y) coordinate of the upper right coordinate of the plateau: ")
-ur_corner_x, ur_corner_y = extract_coords(ur_corner)
-#Create a plateau with (x,y) as the upper right corner
-plateau = Plateau(ur_corner_x, ur_corner_y)
-
-rover_name = input("Enter the name of the rover: ")
-rover_coord = input("Enter (x,y) coordinate of the rover: ")
-rover_coord_x, rover_coord_y = extract_coords(rover_coord)
-rover_initial_orientation = input("Enter the rover's initial orientation: ")
-#Instantiate a rover
-rover = Rover(rover_name, rover_coord_x, rover_coord_y, rover_initial_orientation)
-rover_instructions = input("Enter the string of instructions to send to rover (the instructions will be read from left to right): ")
-#Split the string into individual letters
-rover_instructions = [rover_instructions[i:i+1] for i in range(0, len(rover_instructions))]
-print(rover_instructions)
-for i in range(0,len(rover_instructions)):
-    rover.issue_command(rover_instructions[i])
+number_of_rovers = input("Enter number of rovers: ")
+number_of_rovers = int(number_of_rovers)
+for i in range(0,number_of_rovers):
+    rover_name = input("Enter the name of rover number {}: ".format(str(i+1)))
+    rover_coord = input("Enter the starting (x,y) coordinate of rover number {}: ".format(str(i+1)))
+    rover_coord_x, rover_coord_y = extract_coords(rover_coord)
+    rover_initial_orientation = input("Enter the initial orientation of rover number {}: ".format(str(i+1)))
+    #Instantiate a rover
+    rover = Rover(rover_name, rover_coord_x, rover_coord_y, rover_initial_orientation, plateau_ur_corner_x, plateau_ur_corner_y)
+    rover_instructions = input("Enter the string of instructions to send to rover number {} (the instructions will be read from left to right): ".format(str(i+1)))
+    #Split the string into individual letters
+    rover_instructions = [rover_instructions[i:i+1] for i in range(0, len(rover_instructions))]
+    #Send the instructions to the rover
+    for j in range(0,len(rover_instructions)):
+        rover.issue_command(rover_instructions[j])
+    rover.print_stop_message()
